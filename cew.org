@@ -1,0 +1,268 @@
+#+TITLE: Cliff Wulfman's Emacs configuration
+* Configuration
+** About this file
+   :PROPERTIES:
+   :CUSTOM_ID: babel-init
+   :END:
+<<babel-init>>
+
+** Personal information
+#+BEGIN_SRC emacs-lisp
+(setq user-full-name "Clifford Wulfman"
+      user-mail-address "cwulfman@princeton.edu")
+#+END_SRC
+
+** General Emacs initialization
+*** Add to package-archives
+#+BEGIN_SRC emacs-lisp
+(unless (assoc-default "melpa" package-archives)
+  (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t))
+(unless (assoc-default "marmalade" package-archives)
+  (add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/") t))
+#+END_SRC
+
+Use =M-x package-refresh-contents= to reload the list of packages
+after adding these for the first time.
+*** Add my elisp directory and other files
+
+#+BEGIN_SRC emacs-lisp
+(unless (boundp 'user-emacs-directory)
+  (defvar user-emacs-directory "~/.emacs.d/"))
+(defvar user-elisp-directory "~/elisp")
+(add-to-list 'load-path user-elisp-directory)
+(unless (package-installed-p 'use-package)
+  (package-install 'use-package))
+(setq use-package-verbose t)
+(require 'use-package)
+(use-package auto-compile
+  :ensure t
+  :config (auto-compile-on-load-mode))
+(setq load-prefer-newer t)
+#+END_SRC
+*** Keep things minimalistic
+#+BEGIN_SRC emacs-lisp
+  (setq inhibit-startup-screen t)
+  (setq blink-cursor-mode nil)
+#+END_SRC
+** General Configuration
+*** Window configuration
+#+BEGIN_SRC emacs-lisp
+(when window-system
+  (tooltip-mode -1)
+  (tool-bar-mode -1)
+  (menu-bar-mode 1)
+  (scroll-bar-mode -1))
+#+END_SRC
+*** Opacity
+    http://emacs-fu.blogspot.com/2009/02/transparent-emacs.html
+#+BEGIN_SRC emacs-lisp
+  (defun djcb-opacity-modify (&optional dec)
+    "modify the transparency of the emacs frame; if DEC is t,
+      decrease the transparency, otherwise increase it in 10%-steps"
+    (let* ((alpha-or-nil (frame-parameter nil 'alpha)) ; nil before setting
+            (oldalpha (if alpha-or-nil alpha-or-nil 100))
+            (newalpha (if dec (- oldalpha 10) (+ oldalpha 10))))
+      (when (and (>= newalpha frame-alpha-lower-limit) (<= newalpha 100))
+	(modify-frame-parameters nil (list (cons 'alpha newalpha))))))
+
+   ;; C-8 will increase opacity (== decrease transparency)
+   ;; C-9 will decrease opacity (== increase transparency
+   ;; C-0 will returns the state to normal
+  (global-set-key (kbd "C-8") '(lambda()(interactive)(djcb-opacity-modify)))
+  (global-set-key (kbd "C-9") '(lambda()(interactive)(djcb-opacity-modify t)))
+  (global-set-key (kbd "C-0") '(lambda()(interactive)
+				 (modify-frame-parameters nil `((alpha . 100)))))
+
+#+END_SRC
+*** Mode line
+#+BEGIN_SRC emacs-lisp
+(use-package smart-mode-line
+  :ensure t
+  :defer t)
+#+END_SRC
+
+*** Dired
+    Use gls for dired mode (see http://emacsredux.com/blog/2015/05/09/emacs-on-os-x/)
+#+BEGIN_SRC emacs-lisp
+(setq insert-directory-program (executable-find "gls"))
+#+END_SRC
+** Mac-specific configuration
+#+BEGIN_SRC emacs-lisp
+  (when (eq system-type 'darwin)
+    (setq mac-option-modifier (quote meta))
+    (setq ns-alternate-modifier (quote meta))
+    ;; set $MANPATH, $PATH, and exec-path
+    (exec-path-from-shell-initialize))
+
+#+END_SRC
+* Package-specific configurations
+** nxml mode
+#+BEGIN_SRC emacs-lisp
+  (setq nxml-auto-insert-xml-declaration-flag t)
+  (setq nxml-section-element-name-regexp "article\\|\\(sub\\)*section\\|chapter\\|div\\|appendix\\|part\\|preface\\|reference\\|simplesect\\|bibliography\\|bibliodiv\\|glossary\\|glossdiv|front|body|back|list")
+  (setq nxml-slash-auto-complete-flag t)
+  (eval-after-load "rng-loc"
+    '(add-to-list 'rng-schema-locating-files (expand-file-name "schemas.xml" user-emacs-directory)))
+#+END_SRC
+** n3 mode
+#+BEGIN_SRC emacs-lisp
+  (use-package n3-mode
+    :ensure t
+    :commands n3-mode
+    :mode "\\.n3\\|\\.ttl\\|\\.owl")
+
+#+END_SRC
+** Org Mode
+   I use org mode for almost everything. Several folks have developed
+   very elaborate configurations for themselves; it's best not simply
+   to copy and paste, because the customizations are personal.  I'll be
+   adding to this over time.
+*** Keyboard shortcuts
+
+    #+BEGIN_SRC emacs-lisp
+      (bind-key "C-c c" 'org-capture)
+      (bind-key "C-c a" 'org-agenda)
+      (bind-key "C-c l" 'org-store-link)
+      (bind-key "C-c b" 'org-iswitchb)
+    #+END_SRC
+
+*** Agenda
+    #+BEGIN_SRC emacs-lisp
+      (setq org-agenda-files
+        (delq nil
+        	  (mapcar (lambda (x) (and (file-exists-p x) x))
+        		  '(
+        		    "~/org/refile.org"
+        		    "~/org/notes.org"
+        		    "~/org/bluemountain.org"
+        		    "~/org/cdh/mep.org"
+        		    "~/org/cdh/abc.org"))))
+
+      (setq org-agenda-span 14)
+
+
+    #+END_SRC
+*** Capture Templates
+    #+BEGIN_SRC emacs-lisp
+      (defvar my/org-basic-task-template "* TODO %^{Task}
+        :PROPERTIES:
+        :Effort: %^{effort|1:00|0:05|0:15|0:30|2:00|4:00}
+        :END:
+        Captured %<%Y-%m-%d %H:%M>
+        %?
+
+        %i
+        " "Basic task data")
+      (setq org-capture-templates
+                `(("t" "Tasks" entry
+                   (file+headline "~/personal/organizer.org" "Inbox")
+                   ,my/org-basic-task-template)
+                  ("T" "Quick task" entry
+                   (file+headline "~/personal/organizer.org" "Inbox")
+                   "* TODO %^{Task}\nSCHEDULED: %t\n"
+                   :immediate-finish t)
+                  ("i" "Interrupting task" entry
+                   (file+headline "~/personal/organizer.org" "Inbox")
+                   "* STARTED %^{Task}"
+                   :clock-in :clock-resume)
+                  ("e" "Emacs idea" entry
+                   (file+headline "~/code/emacs-notes/tasks.org" "Emacs")
+                   "* TODO %^{Task}"
+                   :immediate-finish t)
+                  ("E" "Energy" table-line
+                   (file+headline "~/personal/organizer.org" "Track energy")
+                   "| %U | %^{Energy 5-awesome 3-fuzzy 1-zzz} | %^{Note} |"
+                   :immediate-finish t
+                   )
+                  ("b" "Business task" entry
+                   (file+headline "~/personal/business.org" "Tasks")
+                   ,my/org-basic-task-template)
+                  ("p" "People task" entry
+                   (file+headline "~/personal/people.org" "Tasks")
+                   ,my/org-basic-task-template)
+                  ("j" "Journal entry" plain
+                   (file+datetree "~/personal/journal.org")
+                   "%K - %a\n%i\n%?\n"
+                   :unnarrowed t)
+                  ("J" "Journal entry with date" plain
+                   (file+datetree+prompt "~/personal/journal.org")
+                   "%K - %a\n%i\n%?\n"
+                   :unnarrowed t)
+                  ("s" "Journal entry with date, scheduled" entry
+                   (file+datetree+prompt "~/personal/journal.org")
+                   "* \n%K - %a\n%t\t%i\n%?\n"
+                   :unnarrowed t)
+                  ("c" "Protocol Link" entry (file+headline ,org-default-notes-file "Inbox")
+                   "* [[%:link][%:description]] \n\n#+BEGIN_QUOTE\n%i\n#+END_QUOTE\n\n%?\n\nCaptured: %U")
+                  ("db" "Done - Business" entry
+                   (file+headline "~/personal/business.org" "Tasks")
+                   "* DONE %^{Task}\nSCHEDULED: %^t\n%?")
+                  ("dp" "Done - People" entry
+                   (file+headline "~/personal/people.org" "Tasks")
+                   "* DONE %^{Task}\nSCHEDULED: %^t\n%?")
+                  ("dt" "Done - Task" entry
+                   (file+headline "~/personal/organizer.org" "Inbox")
+                   "* DONE %^{Task}\nSCHEDULED: %^t\n%?")
+                  ("q" "Quick note" item
+                   (file+headline "~/personal/organizer.org" "Quick notes"))
+                  ("l" "Ledger entries")
+                  ("lm" "MBNA" plain
+                   (file "~/personal/ledger")
+                   "%(org-read-date) %^{Payee}
+    	Liabilities:MBNA
+    	Expenses:%^{Account}  $%^{Amount}
+          " :immediate-finish t)
+                  ("ln" "No Frills" plain
+                   (file "~/personal/ledger")
+                   "%(let ((org-read-date-prefer-future nil)) (org-read-date)) * No Frills
+    	Liabilities:MBNA
+    	Assets:Wayne:Groceries  $%^{Amount}
+          " :immediate-finish t)
+                  ("lc" "Cash" plain
+                   (file "~/personal/ledger")
+                   "%(org-read-date) * %^{Payee}
+    	Expenses:Cash
+    	Expenses:%^{Account}  %^{Amount}
+          ")
+                  ("B" "Book" entry
+                   (file+datetree "~/personal/books.org" "Inbox")
+                   "* %^{Title}  %^g
+          %i
+          ,,*Author(s):* %^{Author} \\\\
+          ,,*ISBN:* %^{ISBN}
+
+          %?
+
+          ,,*Review on:* %^t \\
+          %a
+          %U"
+                   :clock-in :clock-resume)
+                   ("C" "Contact" entry (file "~/personal/contacts.org")
+    		"* %(org-contacts-template-name)
+          :PROPERTIES:
+          :EMAIL: %(my/org-contacts-template-email)
+          :END:")
+                   ("n" "Daily note" table-line (file+olp "~/personal/organizer.org" "Inbox")
+    		"| %u | %^{Note} |"
+    		:immediate-finish t)
+                   ("r" "Notes" entry
+    		(file+datetree "~/personal/organizer.org")
+    		"* %?\n\n%i\n"
+    		)))
+
+    #+END_SRC
+** Clojure
+   Higginbotham's /Clojure for the Brave and True/ includes some emacs init
+   code (https://www.nostarch.com/clojure/).  There's much more to add.
+ #+BEGIN_SRC emacs-lisp :tangle no
+   (use-package clojure-mode
+     :ensure t)
+   (use-package cider-mode
+     :ensure t
+     :init
+     (add-hook 'cider-mode-hook #'eldoc-mode)
+     (add-hook 'cider-repl-mode-hook #'company-mode)
+     (add-hook 'cider-mode-hook #'company-mode)
+     (add-hook 'cider-repl-mode-hook #'paredit-mode)
+     (setq nrepl-log-messages t))
+ #+END_SRC
