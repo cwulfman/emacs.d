@@ -132,6 +132,7 @@ after adding these for the first time.
         (delq nil
         	  (mapcar (lambda (x) (and (file-exists-p x) x))
         		  '(
+			    "~/gtd/bucket.org"
         		    "~/org/refile.org"
         		    "~/org/notes.org"
         		    "~/org/bluemountain.org"
@@ -155,31 +156,16 @@ after adding these for the first time.
         " "Basic task data")
       (setq org-capture-templates
                 `(("t" "Tasks" entry
-                   (file+headline "~/personal/organizer.org" "Inbox")
+                   (file+headline "~/gtd/bucket.org" "Inbox")
                    ,my/org-basic-task-template)
                   ("T" "Quick task" entry
-                   (file+headline "~/personal/organizer.org" "Inbox")
+                   (file+headline "~/gtd/bucket.org" "Inbox")
                    "* TODO %^{Task}\nSCHEDULED: %t\n"
                    :immediate-finish t)
                   ("i" "Interrupting task" entry
-                   (file+headline "~/personal/organizer.org" "Inbox")
+                   (file+headline "~/gtd/bucket.org" "Inbox")
                    "* STARTED %^{Task}"
                    :clock-in :clock-resume)
-                  ("e" "Emacs idea" entry
-                   (file+headline "~/code/emacs-notes/tasks.org" "Emacs")
-                   "* TODO %^{Task}"
-                   :immediate-finish t)
-                  ("E" "Energy" table-line
-                   (file+headline "~/personal/organizer.org" "Track energy")
-                   "| %U | %^{Energy 5-awesome 3-fuzzy 1-zzz} | %^{Note} |"
-                   :immediate-finish t
-                   )
-                  ("b" "Business task" entry
-                   (file+headline "~/personal/business.org" "Tasks")
-                   ,my/org-basic-task-template)
-                  ("p" "People task" entry
-                   (file+headline "~/personal/people.org" "Tasks")
-                   ,my/org-basic-task-template)
                   ("j" "Journal entry" plain
                    (file+datetree "~/personal/journal.org")
                    "%K - %a\n%i\n%?\n"
@@ -192,65 +178,68 @@ after adding these for the first time.
                    (file+datetree+prompt "~/personal/journal.org")
                    "* \n%K - %a\n%t\t%i\n%?\n"
                    :unnarrowed t)
-                  ("c" "Protocol Link" entry (file+headline ,org-default-notes-file "Inbox")
-                   "* [[%:link][%:description]] \n\n#+BEGIN_QUOTE\n%i\n#+END_QUOTE\n\n%?\n\nCaptured: %U")
-                  ("db" "Done - Business" entry
-                   (file+headline "~/personal/business.org" "Tasks")
-                   "* DONE %^{Task}\nSCHEDULED: %^t\n%?")
-                  ("dp" "Done - People" entry
-                   (file+headline "~/personal/people.org" "Tasks")
-                   "* DONE %^{Task}\nSCHEDULED: %^t\n%?")
                   ("dt" "Done - Task" entry
-                   (file+headline "~/personal/organizer.org" "Inbox")
+                   (file+headline "~/gtd/bucket.org" "Inbox")
                    "* DONE %^{Task}\nSCHEDULED: %^t\n%?")
                   ("q" "Quick note" item
                    (file+headline "~/personal/organizer.org" "Quick notes"))
-                  ("l" "Ledger entries")
-                  ("lm" "MBNA" plain
-                   (file "~/personal/ledger")
-                   "%(org-read-date) %^{Payee}
-    	Liabilities:MBNA
-    	Expenses:%^{Account}  $%^{Amount}
-          " :immediate-finish t)
-                  ("ln" "No Frills" plain
-                   (file "~/personal/ledger")
-                   "%(let ((org-read-date-prefer-future nil)) (org-read-date)) * No Frills
-    	Liabilities:MBNA
-    	Assets:Wayne:Groceries  $%^{Amount}
-          " :immediate-finish t)
-                  ("lc" "Cash" plain
-                   (file "~/personal/ledger")
-                   "%(org-read-date) * %^{Payee}
-    	Expenses:Cash
-    	Expenses:%^{Account}  %^{Amount}
-          ")
-                  ("B" "Book" entry
-                   (file+datetree "~/personal/books.org" "Inbox")
-                   "* %^{Title}  %^g
-          %i
-          ,,*Author(s):* %^{Author} \\\\
-          ,,*ISBN:* %^{ISBN}
-
-          %?
-
-          ,,*Review on:* %^t \\
-          %a
-          %U"
-                   :clock-in :clock-resume)
-                   ("C" "Contact" entry (file "~/personal/contacts.org")
-    		"* %(org-contacts-template-name)
-          :PROPERTIES:
-          :EMAIL: %(my/org-contacts-template-email)
-          :END:")
-                   ("n" "Daily note" table-line (file+olp "~/personal/organizer.org" "Inbox")
+                   ("n" "Daily note" table-line (file+olp "~/gtd/bucket.org" "Inbox")
     		"| %u | %^{Note} |"
     		:immediate-finish t)
                    ("r" "Notes" entry
-    		(file+datetree "~/personal/organizer.org")
+    		(file+datetree "~/gtd/notes.org")
     		"* %?\n\n%i\n"
     		)))
 
     #+END_SRC
+*** Tasks and States
+    Taken from Bernt Hansen.
+#+begin_src emacs-lisp
+(setq org-todo-keywords
+      (quote ((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d)")
+              (sequence "WAITING(w@/!)" "HOLD(h@/!)" "|" "CANCELLED(c@/!)" "PHONE" "MEETING"))))
+
+(setq org-todo-keyword-faces
+      (quote (("TODO" :foreground "red" :weight bold)
+              ("NEXT" :foreground "blue" :weight bold)
+              ("DONE" :foreground "forest green" :weight bold)
+              ("WAITING" :foreground "orange" :weight bold)
+              ("HOLD" :foreground "magenta" :weight bold)
+              ("CANCELLED" :foreground "forest green" :weight bold)
+              ("MEETING" :foreground "forest green" :weight bold)
+              ("PHONE" :foreground "forest green" :weight bold))))
+#+end_src
+** TO DO state triggers
+
+   Bernt has a few triggers that automatically assign tags to tasks
+   based on state changes.  If a task moves to =CANCELLED= state then
+   it gets a =CANCELLED= tag.  Moving a =CANCELLED= task back to
+   =TODO= removes the =CANCELLED= tag.  These are used for filtering
+   tasks in agenda views which I'll talk about later.
+
+   The triggers break down to the following rules:
+
+- Moving a task to =CANCELLED= adds a =CANCELLED= tag
+- Moving a task to =WAITING= adds a =WAITING= tag
+- Moving a task to =HOLD= adds =WAITING= and =HOLD= tags
+- Moving a task to a done state removes =WAITING= and =HOLD= tags
+- Moving a task to =TODO= removes =WAITING=, =CANCELLED=, and =HOLD= tags
+- Moving a task to =NEXT= removes =WAITING=, =CANCELLED=, and =HOLD= tags
+- Moving a task to =DONE= removes =WAITING=, =CANCELLED=, and =HOLD= tags
+
+The tags are used to filter tasks in the agenda views conveniently.
+
+#+begin_src emacs-lisp 
+(setq org-todo-state-tags-triggers
+      (quote (("CANCELLED" ("CANCELLED" . t))
+              ("WAITING" ("WAITING" . t))
+              ("HOLD" ("WAITING") ("HOLD" . t))
+              (done ("WAITING") ("HOLD"))
+              ("TODO" ("WAITING") ("CANCELLED") ("HOLD"))
+              ("NEXT" ("WAITING") ("CANCELLED") ("HOLD"))
+              ("DONE" ("WAITING") ("CANCELLED") ("HOLD")))))
+#+end_src
+
 ** Clojure
    Higginbotham's /Clojure for the Brave and True/ includes some emacs init
    code (https://www.nostarch.com/clojure/).  There's much more to add.
