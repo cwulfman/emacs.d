@@ -1,4 +1,5 @@
-#+TITLE: Cliff Wulfman's Emacs configuration
+q#+TITLE: Cliff Wulfman's Emacs configuration
+#+OPTIONS: toc:4 h:4
 * Configuration
 ** About this file
    :PROPERTIES:
@@ -6,30 +7,69 @@
    :END:
 <<babel-init>>
 
+My ~/.emacs.d/init.el is symlinked to cew.el, which is generated from
+this file via M-x org-babel-tangle (C-c C-v t). Re-run org-babel-tangle
+whenever you edit this file.
+
+** Starting up
+   Taken from Sacha Chua.
+
+#+BEGIN_SRC emacs-lisp :tangle yes
+  ;; This sets up the load path so that we can override it
+  (package-initialize)
+  ;; Override the packages with the git version of Org and other packages
+  (add-to-list 'load-path "~/.emacs.d/elpa/org-20180618")
+  (add-to-list 'load-path "~/.emacs.d/elpa/org-plus-contrib-20180618")
+  (add-to-list 'load-path "/usr/local/share/emacs/site-lisp")
+  (setq package-enable-at-startup nil)
+  (setq custom-file "~/.emacs.d/custom-settings.el")
+  (load custom-file t)
+#+END_SRC
 ** Personal information
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle yes
 (setq user-full-name "Clifford Wulfman"
       user-mail-address "cwulfman@princeton.edu")
 #+END_SRC
-
 ** General Emacs initialization
-*** Add to package-archives
-#+BEGIN_SRC emacs-lisp
-(unless (assoc-default "melpa" package-archives)
-  (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/") t))
-(unless (assoc-default "marmalade" package-archives)
-  (add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/") t))
+*** Add package archives
+#+BEGIN_SRC emacs-lisp :tangle yes
+  (unless (assoc-default "melpa" package-archives)
+    (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t))
+  (unless (assoc-default "org" package-archives)
+    (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t))
+  (unless (assoc-default "elpy" package-archives)
+    (add-to-list 'package-archives
+	       '("elpy" . "http://jorgenschaefer.github.io/packages/")))
 #+END_SRC
 
 Use =M-x package-refresh-contents= to reload the list of packages
 after adding these for the first time.
+
 *** Add my elisp directory and other files
 
-#+BEGIN_SRC emacs-lisp
+Sometimes I load files outside the package system. As long as they're
+in a directory in my =load-path=, Emacs can find them.
+
+#+BEGIN_SRC emacs-lisp :tangle yes
 (unless (boundp 'user-emacs-directory)
   (defvar user-emacs-directory "~/.emacs.d/"))
 (defvar user-elisp-directory "~/elisp")
 (add-to-list 'load-path user-elisp-directory)
+#+END_SRC
+
+Use package is vital.
+#+BEGIN_SRC emacs-lisp :tangle yes
+  (add-to-list 'load-path "~/.emacs.d/use-package")
+  (require 'use-package)
+  (setq use-package-verbose t)
+  (use-package auto-compile
+    :ensure t
+    :config (auto-compile-on-load-mode))
+  (setq load-prefer-newer t)
+#+END_SRC
+
+
+#+BEGIN_SRC emacs-lisp :tangle no
 (unless (package-installed-p 'use-package)
   (package-install 'use-package))
 (setq use-package-verbose t)
@@ -39,14 +79,17 @@ after adding these for the first time.
   :config (auto-compile-on-load-mode))
 (setq load-prefer-newer t)
 #+END_SRC
+
+
 *** Keep things minimalistic
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle yes
   (setq inhibit-startup-screen t)
   (setq blink-cursor-mode nil)
 #+END_SRC
+
 ** General Configuration
 *** Window configuration
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle yes
 (when window-system
   (tooltip-mode -1)
   (tool-bar-mode -1)
@@ -55,7 +98,7 @@ after adding these for the first time.
 #+END_SRC
 *** Opacity
     http://emacs-fu.blogspot.com/2009/02/transparent-emacs.html
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle yes
   (defun djcb-opacity-modify (&optional dec)
     "modify the transparency of the emacs frame; if DEC is t,
       decrease the transparency, otherwise increase it in 10%-steps"
@@ -75,51 +118,100 @@ after adding these for the first time.
 
 #+END_SRC
 *** Mode line
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle yes
 (use-package smart-mode-line
   :ensure t
   :defer t)
 #+END_SRC
-
 *** Dired
     Use gls for dired mode (see http://emacsredux.com/blog/2015/05/09/emacs-on-os-x/)
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle yes
 (setq insert-directory-program (executable-find "gls"))
 #+END_SRC
+*** Don't use tabs for spacing
+    Don't use tabs for spacing
+#+BEGIN_SRC emacs-lisp :tangle yes
+  (setq indent-tabs-mode nil)
+#+END_SRC
 ** Mac-specific configuration
-#+BEGIN_SRC emacs-lisp
+
+#+BEGIN_SRC emacs-lisp :tangle yes
   (when (eq system-type 'darwin)
     (setq mac-option-modifier (quote meta))
     (setq ns-alternate-modifier (quote meta))
     ;; set $MANPATH, $PATH, and exec-path
     (exec-path-from-shell-initialize))
-
 #+END_SRC
 * Package-specific configurations
+** swiper
+   I go off and on with this package. Here's how to install and
+   configure (thanks to Zamansky)
+   #+BEGIN_SRC emacs-lisp :tangle yes
+     (use-package swiper
+       :ensure t
+       :config
+       (progn
+	 (global-set-key (kbd "C-s") 'swiper)
+	 ;;shell and system tools
+	 (global-set-key (kbd "C-c g") 'counsel-git)
+	 (global-set-key (kbd "C-c j") 'counsel-git-grep)
+	 (global-set-key (kbd "C-c k") 'counsel-ag)
+	 (global-set-key (kbd "C-x l") 'counsel-locate)
+	 (global-set-key (kbd "C-c C-r") 'ivy-resume)))
+   #+END_SRC
+** magit
+   #+BEGIN_SRC emacs-lisp :tangle yes
+     (use-package magit
+       :ensure t
+       :config
+       (progn
+         ;; make ivy work with magit  http://oremacs.com/2015/04/16/ivy-mode/ -cew 8/4/2016
+         ;; (setq magit-completing-read-function 'ivy-completing-read)
+         (setq magit-item-highlight-face 'bold)))
+   #+END_SRC
+** try mode
+#+BEGIN_SRC emacs-lisp :tangle yes
+  (use-package try
+    :ensure t)
+#+END_SRC
+** which key
+   #+BEGIN_SRC emacs-lisp :tangle yes
+   (use-package which-key
+   :ensure t
+   :config
+   (which-key-mode))
+   #+END_SRC
+
 ** nxml mode
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle yes
   (setq nxml-auto-insert-xml-declaration-flag t)
-  (setq nxml-section-element-name-regexp "article\\|\\(sub\\)*section\\|chapter\\|div\\|appendix\\|part\\|preface\\|reference\\|simplesect\\|bibliography\\|bibliodiv\\|glossary\\|glossdiv|front|body|back|list")
+  (setq nxml-section-element-name-regexp "template\\|article\\|\\(sub\\)*section\\|chapter\\|div\\|appendix\\|part\\|preface\\|reference\\|simplesect\\|bibliography\\|bibliodiv\\|glossary\\|glossdiv\\|teiHeader\\|text\\Ifront\\|body\\|back\\|list")
   (setq nxml-slash-auto-complete-flag t)
   (eval-after-load "rng-loc"
     '(add-to-list 'rng-schema-locating-files (expand-file-name "schemas.xml" user-emacs-directory)))
 #+END_SRC
 ** n3 mode
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle yes
   (use-package n3-mode
     :ensure t
     :commands n3-mode
     :mode "\\.n3\\|\\.ttl\\|\\.owl")
-
 #+END_SRC
+
 ** Org Mode
    I use org mode for almost everything. Several folks have developed
    very elaborate configurations for themselves; it's best not simply
    to copy and paste, because the customizations are personal.  I'll be
    adding to this over time.
+*** Enable contrib
+   #+BEGIN_SRC emacs-lisp :tangle yes
+   (add-to-list 'load-path
+   (concat (file-name-as-directory user-elisp-directory)
+   "org-mode/contrib/lisp"))
+    #+END_SRC
 *** Keyboard shortcuts
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :tangle yes
       (bind-key "C-c c" 'org-capture)
       (bind-key "C-c a" 'org-agenda)
       (bind-key "C-c l" 'org-store-link)
@@ -127,131 +219,371 @@ after adding these for the first time.
     #+END_SRC
 
 *** Agenda
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :tangle yes
       (setq org-agenda-files
-        (delq nil
-        	  (mapcar (lambda (x) (and (file-exists-p x) x))
-        		  '(
-			    "~/gtd/bucket.org"
-        		    "~/org/refile.org"
-        		    "~/org/notes.org"
-        		    "~/org/bluemountain.org"
-        		    "~/org/cdh/mep.org"
-        		    "~/org/cdh/abc.org"))))
+	(delq nil
+	  (mapcar (lambda (x) (and (file-exists-p x) x))
+		  '(
+		    "~/gtd/gtd.org"
+		    "~/gtd/notes.org"
+      ))))
 
       (setq org-agenda-span 14)
-
-
     #+END_SRC
 *** Capture Templates
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :tangle yes
       (defvar my/org-basic-task-template "* TODO %^{Task}
-        :PROPERTIES:
-        :Effort: %^{effort|1:00|0:05|0:15|0:30|2:00|4:00}
-        :END:
-        Captured %<%Y-%m-%d %H:%M>
-        %?
+	:PROPERTIES:
+	:Effort: %^{effort|1:00|0:05|0:15|0:30|2:00|4:00}
+	:END:
+	Captured %<%Y-%m-%d %H:%M>
+	%?
 
-        %i
-        " "Basic task data")
+	%i
+	" "Basic task data")
       (setq org-capture-templates
-                `(("t" "Tasks" entry
-                   (file+headline "~/gtd/bucket.org" "Inbox")
-                   ,my/org-basic-task-template)
-                  ("T" "Quick task" entry
-                   (file+headline "~/gtd/bucket.org" "Inbox")
-                   "* TODO %^{Task}\nSCHEDULED: %t\n"
-                   :immediate-finish t)
-                  ("i" "Interrupting task" entry
-                   (file+headline "~/gtd/bucket.org" "Inbox")
-                   "* STARTED %^{Task}"
-                   :clock-in :clock-resume)
-                  ("j" "Journal entry" plain
-                   (file+datetree "~/personal/journal.org")
-                   "%K - %a\n%i\n%?\n"
-                   :unnarrowed t)
-                  ("J" "Journal entry with date" plain
-                   (file+datetree+prompt "~/personal/journal.org")
-                   "%K - %a\n%i\n%?\n"
-                   :unnarrowed t)
-                  ("s" "Journal entry with date, scheduled" entry
-                   (file+datetree+prompt "~/personal/journal.org")
-                   "* \n%K - %a\n%t\t%i\n%?\n"
-                   :unnarrowed t)
-                  ("dt" "Done - Task" entry
-                   (file+headline "~/gtd/bucket.org" "Inbox")
-                   "* DONE %^{Task}\nSCHEDULED: %^t\n%?")
-                  ("q" "Quick note" item
-                   (file+headline "~/personal/organizer.org" "Quick notes"))
-                   ("n" "Daily note" table-line (file+olp "~/gtd/bucket.org" "Inbox")
-    		"| %u | %^{Note} |"
-    		:immediate-finish t)
-                   ("r" "Notes" entry
-    		(file+datetree "~/gtd/notes.org")
-    		"* %?\n\n%i\n"
-    		)))
+      (quote
+	  (("j" "Journal Entry" entry
+	(file+olp+datetree "~/personal/journal.org")
+	"* %U
+	%?
+	%i
+	%a")
+	   ("t" "Todo" entry
+	(file+olp "~/gtd/gtd.org" "INBOX")
+	"* TODO %?
+	%i
+	%a")
+	   ("m" "Meeting" entry
+	(file+olp "~/gtd/notes.org" "Meetings")
+	"* %U MEETING with %? :MEETING:
+      ,** Notes
 
+      ,** Actions
+      " :clock-in t :clock-resume t)
+	   ("p" "Phone" entry
+	(file+olp "~/gtd/notes.org" "Meetings")
+	"* %U CALL with %? :CALL:
+      ,** Notes
+
+      ,** Actions
+      " :clock-in t :clock-resume t)
+     
+	   ("n" "Note" entry
+	(file+headline "~/gtd/notes.org" "Notes")
+	"* %u %?" :prepend t)
+	   ))
+	)
+    #+END_SRC
+*** Faces
+    #+BEGIN_SRC emacs-lisp :tangle no
+      (setq org-todo-keyword-faces
+	    (quote (("TODO" :foreground "black" :weight bold)
+		    ("NEXT" :foreground "gold" :weight bold)
+		    ("IN_PROGRESS" :foreground "green" :weight bold)
+		    ("DONE" :foreground "gray" :weight bold)
+		    ("WAITING" :foreground "orange" :weight bold)
+		    ("HOLD" :foreground "red" :weight bold)
+		    ("CANCELLED" :foreground "light gray" :weight bold)
+		    ("MEETING" :foreground "forest green" :weight bold)
+		    ("PHONE" :foreground "forest green" :weight bold))))
     #+END_SRC
 *** Tasks and States
-    Taken from Bernt Hansen.
-#+begin_src emacs-lisp
-(setq org-todo-keywords
-      (quote ((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d)")
-              (sequence "WAITING(w@/!)" "HOLD(h@/!)" "|" "CANCELLED(c@/!)" "PHONE" "MEETING"))))
-
-(setq org-todo-keyword-faces
-      (quote (("TODO" :foreground "red" :weight bold)
-              ("NEXT" :foreground "blue" :weight bold)
-              ("DONE" :foreground "forest green" :weight bold)
-              ("WAITING" :foreground "orange" :weight bold)
-              ("HOLD" :foreground "magenta" :weight bold)
-              ("CANCELLED" :foreground "forest green" :weight bold)
-              ("MEETING" :foreground "forest green" :weight bold)
-              ("PHONE" :foreground "forest green" :weight bold))))
+    Taken and adapted from Bernt Hansen.
+#+begin_src emacs-lisp :tangle yes
+  (setq org-todo-keywords
+	(quote ((sequence "TODO(t)" "NEXT(n)" "IN_PROGRESS" "|" "DONE(d)")
+		(sequence "WAITING(w@/!)" "HOLD(h@/!)" "|" "CANCELLED(c@/!)"))))
 #+end_src
-** TO DO state triggers
+    Bernt Hansen has a few triggers that automatically assign tags to tasks
+    based on state changes.  If a task moves to =CANCELLED= state then
+    it gets a =CANCELLED= tag.  Moving a =CANCELLED= task back to
+    =TODO= removes the =CANCELLED= tag.  These are used for filtering
+    tasks in agenda views which I'll talk about later.
 
-   Bernt has a few triggers that automatically assign tags to tasks
-   based on state changes.  If a task moves to =CANCELLED= state then
-   it gets a =CANCELLED= tag.  Moving a =CANCELLED= task back to
-   =TODO= removes the =CANCELLED= tag.  These are used for filtering
-   tasks in agenda views which I'll talk about later.
+    The triggers break down to the following rules:
+    - Moving a task to =CANCELLED= adds a =CANCELLED= tag
+    - Moving a task to =WAITING= adds a =WAITING= tag
+    - Moving a task to =HOLD= adds =WAITING= and =HOLD= tags
+    - Moving a task to a done state removes =WAITING= and =HOLD= tags
+    - Moving a task to =TODO= removes =WAITING=, =CANCELLED=, and =HOLD= tags
+    - Moving a task to =NEXT= removes =WAITING=, =CANCELLED=, and =HOLD= tags
+    - Moving a task to =DONE= removes =WAITING=, =CANCELLED=, and =HOLD= tags
 
-   The triggers break down to the following rules:
+     The tags are used to filter tasks in the agenda views conveniently.
+     #+BEGIN_SRC emacs-lisp :tangle yes
+       (setq org-todo-state-tags-triggers
+	     (quote (("CANCELLED" ("CANCELLED" . t))
+		     ("WAITING" ("WAITING" . t))
+		     ("HOLD" ("WAITING") ("HOLD" . t))
+		     (done ("WAITING") ("HOLD"))
+		     ("TODO" ("WAITING") ("CANCELLED") ("HOLD"))
+		     ("NEXT" ("WAITING") ("CANCELLED") ("HOLD"))
+		     ("DONE" ("WAITING") ("CANCELLED") ("HOLD")))))
+     #+END_SRC
+*** KOMA-Script configuration
+    For writing letters in org.  The following configuration comes from [[http://orgmode.org/worg/exporters/koma-letter-export.html][worg]]. 
 
-- Moving a task to =CANCELLED= adds a =CANCELLED= tag
-- Moving a task to =WAITING= adds a =WAITING= tag
-- Moving a task to =HOLD= adds =WAITING= and =HOLD= tags
-- Moving a task to a done state removes =WAITING= and =HOLD= tags
-- Moving a task to =TODO= removes =WAITING=, =CANCELLED=, and =HOLD= tags
-- Moving a task to =NEXT= removes =WAITING=, =CANCELLED=, and =HOLD= tags
-- Moving a task to =DONE= removes =WAITING=, =CANCELLED=, and =HOLD= tags
+    #+BEGIN_SRC emacs-lisp :tangle yes
+      (eval-after-load 'ox '(require 'ox-koma-letter))
+      (eval-after-load 'ox-latex
+        '(add-to-list 'org-latex-packages-alist '("AUTO" "babel" t) t))
+    #+END_SRC
+*** org-reveal
+    Slide presentations.  See http://cestlaz.github.io/posts/using-emacs-11-reveal/#.V5TkOpMrJE5
+    Disabled for normal use; it loads slowly
+    #+BEGIN_SRC emacs-lisp
+      (use-package ox-reveal
+        :ensure ox-reveal)
+      (setq org-reveal-root "http://cdn.jsdelivr.net/reveal.js/3.0.0/")
+      (setq org-reveal-mathjax t)
+      (use-package htmlize
+      :ensure t)
+    #+END_SRC
 
-The tags are used to filter tasks in the agenda views conveniently.
+    #+RESULTS:
+*** markdown-mode
+    #+BEGIN_SRC emacs-lisp :tangle yes
+      (use-package markdown-mode
+        :ensure t
+        :commands (markdown-mode gfm-mode)
+        :mode (("README\\.md\\'" . gfm-mode)
+               ("\\.md\\'" . markdown-mode)
+               ("\\.markdown\\'" . markdown-mode))
+        :init (setq markdown-command "multimarkdown"))
+    #+END_SRC
+*** Aesthetics
+    #+BEGIN_SRC emacs-lisp :tangle yes
+      (use-package org-bullets
+        :ensure t
+        :config
+        (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
+    #+END_SRC
+*** org-babel
+   #+BEGIN_SRC emacs-lisp :tangle yes
+     (org-babel-do-load-languages
+      (quote org-babel-load-languages)
+      (quote ((emacs-lisp . t)
+	      (dot . t)
+	      (ditaa . t)
+	      (python . t)
+	      (ruby . t)
+	      (gnuplot . t)
+	      (clojure . t)
+	      (shell . t)
+	      (org . t)
+	      (plantuml . t)
+	      (sparql . t)
+	      (latex . t))))
+     ; Use fundamental mode when editing plantuml blocks with C-c '
+     ; (add-to-list 'org-src-lang-modes (quote ("plantuml" . fundamental)))
+     (add-to-list 'org-src-lang-modes (quote ("plantuml" . plantuml)))
+   #+END_SRC 
+*** org noter
+    #+BEGIN_SRC emacs-lisp :tangle yes
+      (use-package org-noter
+	:ensure t)
+    #+END_SRC
+* Language Support
+** Common Lisp
+   My default implementation is sbcl. Use the following to get
+   slime going from QuickLisp.
 
-#+begin_src emacs-lisp 
-(setq org-todo-state-tags-triggers
-      (quote (("CANCELLED" ("CANCELLED" . t))
-              ("WAITING" ("WAITING" . t))
-              ("HOLD" ("WAITING") ("HOLD" . t))
-              (done ("WAITING") ("HOLD"))
-              ("TODO" ("WAITING") ("CANCELLED") ("HOLD"))
-              ("NEXT" ("WAITING") ("CANCELLED") ("HOLD"))
-              ("DONE" ("WAITING") ("CANCELLED") ("HOLD")))))
-#+end_src
+   #+BEGIN_SRC emacs-lisp :tangle yes
+  (load (expand-file-name "~/quicklisp/slime-helper.el"))
+  ;; Replace "sbcl" with the path to your implementation
+  (setq inferior-lisp-program "/usr/local/bin/sbcl")   
+   #+END_SRC
 
+** Cucumber
+*** feature mode
+    For editing cucumber stories
+    #+BEGIN_SRC emacs-lisp :tangle yes
+       (use-package feature-mode
+	 :ensure t
+	 :defer t
+	 :config
+	 (progn
+	   (setq feature-default-language "fi")
+	   (add-to-list 'auto-mode-alist'("\.feature$" . feature-mode))))
+    #+END_SRC
 ** Clojure
    Higginbotham's /Clojure for the Brave and True/ includes some emacs init
    code (https://www.nostarch.com/clojure/).  There's much more to add.
- #+BEGIN_SRC emacs-lisp :tangle no
+ #+BEGIN_SRC emacs-lisp :tangle yes
    (use-package clojure-mode
      :ensure t)
-   (use-package cider-mode
-     :ensure t
-     :init
-     (add-hook 'cider-mode-hook #'eldoc-mode)
-     (add-hook 'cider-repl-mode-hook #'company-mode)
-     (add-hook 'cider-mode-hook #'company-mode)
-     (add-hook 'cider-repl-mode-hook #'paredit-mode)
-     (setq nrepl-log-messages t))
+   ;; (use-package cider-mode
+   ;;   :ensure t
+   ;;   :init
+   ;;   (add-hook 'cider-mode-hook #'eldoc-mode)
+   ;;   (add-hook 'cider-repl-mode-hook #'company-mode)
+   ;;   (add-hook 'cider-mode-hook #'company-mode)
+   ;;   (add-hook 'cider-repl-mode-hook #'paredit-mode)
+   ;;   (setq nrepl-log-messages t))
+
  #+END_SRC
+** Ruby
+#+BEGIN_SRC emacs-lisp :tangle yes
+  (unless (package-installed-p 'inf-ruby)
+    (package-install 'inf-ruby))
+
+    (add-hook 'after-init-hook 'inf-ruby-switch-setup)
+#+END_SRC
+*** rubocop
+    #+BEGIN_SRC emacs-lisp :tangle yes
+      (use-package rubocop
+        :ensure t)
+    #+END_SRC
+*** RSpec Mode
+    #+BEGIN_SRC emacs-lisp :tangle yes
+      (use-package rspec-mode
+	:ensure t)
+    #+END_SRC
+** Python
+*** elpy
+ #+BEGIN_SRC emacs-lisp :tangle yes
+   (use-package elpy
+     :ensure t
+     :config
+     (elpy-enable)
+     (setq elpy-rpc-python-command "python3.6")
+     (setq python-shell-interpreter "python3.6"))
+ #+END_SRC
+*** virtualenvwrapper
+    Disabling this for now
+ #+BEGIN_SRC emacs-lisp :tangle no
+   (use-package virtualenvwrapper
+     :ensure t
+     :config
+     (progn
+       (venv-initialize-interactive-shells)
+       (venv-initialize-eshell)
+       (setq venv-location "~/.virtualenvs")))
+ #+END_SRC
+** XQuery
+   #+BEGIN_SRC emacs-lisp :tangle yes
+     (use-package xquery-mode
+       :ensure t
+       :mode (("\\.xq[lm]?\\'" . xquery-mode)))
+   #+END_SRC
+** SPARQL
+   #+BEGIN_SRC emacs-lisp :tangle yes
+     (use-package sparql-mode
+       :ensure t
+       :mode (("\\.rq\\'" . sparql-mode)))
+   #+END_SRC
+
+   #+RESULTS:
+
+** Prolog
+   #+BEGIN_SRC emacs-lisp :tangle yes
+     (use-package ediprolog
+       :ensure t
+       :mode (("\\.pl\\'" . prolog-mode)))
+   #+END_SRC
+* Miscellaneous
+** plantuml-mode
+   Disabled 12/4
+   #+BEGIN_SRC emacs-lisp :tangle yes
+     (use-package plantuml-mode
+       :ensure t
+       :config
+       (progn
+	 (setq plantuml-jar-path "/usr/local/Cellar/plantuml/1.2017.16/libexec/plantuml.jar")
+	 (setq org-plantuml-jar-path plantuml-jar-path))
+       )
+   #+END_SRC
+
+** CSV
+*** csv-mode
+    #+BEGIN_SRC emacs-lisp :tangle yes
+      (use-package csv-mode
+	:ensure t
+	:defer t)
+    #+END_SRC
+*** csv-nav
+    #+BEGIN_SRC emacs-lisp :tangle yes
+      (use-package csv-nav
+	:ensure t
+	:defer t)
+    #+END_SRC
+* Trial packages
+** wordnut
+   #+BEGIN_SRC emacs-lisp :tangle no
+      (use-package wordnut
+	:ensure t)
+   #+END_SRC
+** webmode
+   #+BEGIN_SRC emacs-lisp :tangle yes
+     (use-package web-mode
+       :ensure t
+       :mode (("\\.erb\\'" . web-mode)
+   	   ("\\.jinja2\\'" . web-mode)))
+   #+END_SRC
+** projectile
+#+BEGIN_SRC emacs-lisp :tangle no
+   (use-package projectile
+     :ensure t
+     :config
+     (projectile-rails-global-mode))
+#+END_SRC
+** flycheck
+   #+BEGIN_SRC emacs-lisp :tangle no
+     (use-package flycheck
+       :ensure t
+       :init (global-flycheck-mode))
+   #+END_SRC
+** flycheck-plantuml
+   #+BEGIN_SRC emacs-lisp :tangle no
+     (use-package flycheck-plantuml
+       :ensure t
+       :init (with-eval-after-load 'flycheck
+       (require 'flycheck-plantuml)
+       (flycheck-plantuml-setup)))
+   #+END_SRC
+** pipenv.el
+   [[https://docs.pipenv.org][Pipenv]] is, apparently, the recommended Python packaging tool
+   now. It combines pip and virtualenv. [[https://github.com/pwalsh/pipenv.el][pipenv.el]] is an emacs porcelin
+   around pipenv.
+   #+BEGIN_SRC emacs-lisp :tangle yes
+     (use-package pipenv
+       :hook (python-mode . pipenv-mode)
+       :init
+       (setq
+	pipenv-projectile-after-switch-function
+	#'pipenv-projectile-after-switch-extended))
+   #+END_SRC
+** poet-theme
+   Has some prereqs.
+   #+BEGIN_SRC emacs-lisp :tangle no
+     (use-package poet-theme
+       :init
+       (progn
+	 (set-face-attribute 'default nil :family "Fira Code" :height 130)
+	 (set-face-attribute 'fixed-pitch nil :family "Fira Code")
+	 (set-face-attribute 'variable-pitch nil :family "Georgia")
+	 (add-hook 'text-mode-hook
+		   (lambda ()
+		     (variable-pitch-mode 1)))))
+   #+END_SRC
+** spelling
+   Emacs 26 now supports [[https://abiword.github.io/enchant/][Enchant]], and Hunspell is more modern than aspell.
+   Wchec-mode seems popular.
+   #+BEGIN_SRC emacs-lisp :tangle yes
+     (use-package wcheck-mode
+       :ensure t
+       :init
+       (progn
+	 (autoload 'wcheck-mode "wcheck-mode"
+	   "Toggle wcheck-mode." t)
+	 (autoload 'wcheck-change-language "wcheck-mode"
+	   "Switch wcheck-mode languages." t)
+	 (autoload 'wcheck-actions "wcheck-mode"
+	   "Open actions menu." t)
+	 (autoload 'wcheck-jump-forward "wcheck-mode"
+	   "Move point forward to next marked text area." t)
+	 (autoload 'wcheck-jump-backward "wcheck-mode"
+	   "Move point backward to previous marked text area." t)))
+   #+END_SRC
+   
