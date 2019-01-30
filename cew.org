@@ -1,4 +1,4 @@
-q#+TITLE: Cliff Wulfman's Emacs configuration
+#+TITLE: Cliff Wulfman's Emacs configuration
 #+OPTIONS: toc:4 h:4
 * Configuration
 ** About this file
@@ -18,8 +18,8 @@ whenever you edit this file.
   ;; This sets up the load path so that we can override it
   (package-initialize)
   ;; Override the packages with the git version of Org and other packages
-  (add-to-list 'load-path "~/.emacs.d/elpa/org-20180618")
-  (add-to-list 'load-path "~/.emacs.d/elpa/org-plus-contrib-20180618")
+;  (add-to-list 'load-path "~/.emacs.d/elpa/org-20180917")
+;  (add-to-list 'load-path "~/.emacs.d/elpa/org-plus-contrib-20180917")
   (add-to-list 'load-path "/usr/local/share/emacs/site-lisp")
   (setq package-enable-at-startup nil)
   (setq custom-file "~/.emacs.d/custom-settings.el")
@@ -139,14 +139,19 @@ Use package is vital.
   (when (eq system-type 'darwin)
     (setq mac-option-modifier (quote meta))
     (setq ns-alternate-modifier (quote meta))
+    (setq mac-command-modifier (quote super))
     ;; set $MANPATH, $PATH, and exec-path
-    (exec-path-from-shell-initialize))
+    (use-package exec-path-from-shell
+      :ensure t
+      :config
+      (progn
+	(exec-path-from-shell-initialize))))
 #+END_SRC
 * Package-specific configurations
 ** swiper
    I go off and on with this package. Here's how to install and
    configure (thanks to Zamansky)
-   #+BEGIN_SRC emacs-lisp :tangle yes
+   #+BEGIN_SRC emacs-lisp :tangle no
      (use-package swiper
        :ensure t
        :config
@@ -191,12 +196,21 @@ Use package is vital.
     '(add-to-list 'rng-schema-locating-files (expand-file-name "schemas.xml" user-emacs-directory)))
 #+END_SRC
 ** n3 mode
-#+BEGIN_SRC emacs-lisp :tangle yes
+#+BEGIN_SRC emacs-lisp :tangle no
   (use-package n3-mode
     :ensure t
     :commands n3-mode
     :mode "\\.n3\\|\\.ttl\\|\\.owl")
 #+END_SRC
+
+** SPARQL
+   #+BEGIN_SRC emacs-lisp :tangle yes
+     (use-package sparql-mode
+       :ensure t
+       :mode (("\\.rq\\'" . sparql-mode)))
+   #+END_SRC
+
+   #+RESULTS:
 
 ** Org Mode
    I use org mode for almost everything. Several folks have developed
@@ -276,17 +290,17 @@ Use package is vital.
 	)
     #+END_SRC
 *** Faces
-    #+BEGIN_SRC emacs-lisp :tangle no
+    #+BEGIN_SRC emacs-lisp :tangle yes
       (setq org-todo-keyword-faces
-	    (quote (("TODO" :foreground "black" :weight bold)
-		    ("NEXT" :foreground "gold" :weight bold)
-		    ("IN_PROGRESS" :foreground "green" :weight bold)
-		    ("DONE" :foreground "gray" :weight bold)
-		    ("WAITING" :foreground "orange" :weight bold)
+	    (quote (("TODO" :foreground "dark turquoise" :weight normal)
+		    ("NEXT" :foreground "turquoise" :weight bold)
+		    ("IN_PROGRESS" :foreground "light blue" :weight bold)
+		    ("DONE" :foreground "gray" :weight normal)
+		    ("WAITING" :foreground "orange" :weight normal)
 		    ("HOLD" :foreground "red" :weight bold)
-		    ("CANCELLED" :foreground "light gray" :weight bold)
-		    ("MEETING" :foreground "forest green" :weight bold)
-		    ("PHONE" :foreground "forest green" :weight bold))))
+		    ("CANCELLED" :foreground "light gray" :weight normal)
+		    ("MEETING" :foreground "forest green" :weight normal)
+		    ("PHONE" :foreground "forest green" :weight noral))))
     #+END_SRC
 *** Tasks and States
     Taken and adapted from Bernt Hansen.
@@ -332,7 +346,7 @@ Use package is vital.
 *** org-reveal
     Slide presentations.  See http://cestlaz.github.io/posts/using-emacs-11-reveal/#.V5TkOpMrJE5
     Disabled for normal use; it loads slowly
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :tangle no
       (use-package ox-reveal
         :ensure ox-reveal)
       (setq org-reveal-root "http://cdn.jsdelivr.net/reveal.js/3.0.0/")
@@ -359,6 +373,7 @@ Use package is vital.
         :config
         (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
     #+END_SRC
+
 *** org-babel
    #+BEGIN_SRC emacs-lisp :tangle yes
      (org-babel-do-load-languages
@@ -380,10 +395,30 @@ Use package is vital.
      (add-to-list 'org-src-lang-modes (quote ("plantuml" . plantuml)))
    #+END_SRC 
 *** org noter
-    #+BEGIN_SRC emacs-lisp :tangle yes
+    #+BEGIN_SRC emacs-lisp :tangle no
       (use-package org-noter
 	:ensure t)
     #+END_SRC
+** Projectile
+   #+BEGIN_SRC emacs-lisp :tangle yes
+     (use-package projectile
+       :ensure t
+       :config
+       (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
+       (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
+       (projectile-mode +1))
+   #+END_SRC
+** paredit mode
+   #+begin_src emacs-lisp :tangle yes
+     (use-package paredit
+       :ensure t)
+   #+end_src
+
+   As a crib for learning, add menu for paredit
+   #+begin_src emacs-lisp :tangle yes
+     (use-package paredit-menu
+       :ensure t)
+   #+end_src
 * Language Support
 ** Common Lisp
    My default implementation is sbcl. Use the following to get
@@ -410,26 +445,44 @@ Use package is vital.
 ** Clojure
    Higginbotham's /Clojure for the Brave and True/ includes some emacs init
    code (https://www.nostarch.com/clojure/).  There's much more to add.
- #+BEGIN_SRC emacs-lisp :tangle yes
+
+ #+BEGIN_SRC emacs-lisp :tangle no
    (use-package clojure-mode
      :ensure t)
-   ;; (use-package cider-mode
-   ;;   :ensure t
-   ;;   :init
-   ;;   (add-hook 'cider-mode-hook #'eldoc-mode)
-   ;;   (add-hook 'cider-repl-mode-hook #'company-mode)
-   ;;   (add-hook 'cider-mode-hook #'company-mode)
-   ;;   (add-hook 'cider-repl-mode-hook #'paredit-mode)
-   ;;   (setq nrepl-log-messages t))
+;;    (use-package cider-mode
+;;      :ensure t
+;;      :init
+;;      (add-hook 'cider-mode-hook #'eldoc-mode)
+;;      (add-hook 'cider-repl-mode-hook #'company-mode)
+;;      (add-hook 'cider-mode-hook #'company-mode)
+;;      (add-hook 'cider-repl-mode-hook #'paredit-mode)
+;;      (setq nrepl-log-messages t))
 
  #+END_SRC
 ** Ruby
-#+BEGIN_SRC emacs-lisp :tangle yes
+*** inf-ruby
+   #+BEGIN_SRC emacs-lisp :tangle yes
+     (use-package inf-ruby
+       :ensure t
+       :config
+       (progn
+	 (add-hook 'ruby-mode-hook 'inf-ruby-minor-mode)
+	 (add-hook 'enh-ruby-mode-hook 'inf-ruby-minor-mode)))
+   #+END_SRC
+#+BEGIN_SRC emacs-lisp :tangle no
   (unless (package-installed-p 'inf-ruby)
     (package-install 'inf-ruby))
 
     (add-hook 'after-init-hook 'inf-ruby-switch-setup)
 #+END_SRC
+*** enh-ruby-mode
+    #+BEGIN_SRC emacs-lisp :tangle yes
+      (use-package enh-ruby-mode
+	:ensure t
+	:config
+	(progn
+	  (add-to-list 'auto-mode-alist '("\\.rb$" . enh-ruby-mode))))
+    #+END_SRC
 *** rubocop
     #+BEGIN_SRC emacs-lisp :tangle yes
       (use-package rubocop
@@ -447,40 +500,47 @@ Use package is vital.
      :ensure t
      :config
      (elpy-enable)
-     (setq elpy-rpc-python-command "python3.6")
-     (setq python-shell-interpreter "python3.6"))
+     (setq elpy-rpc-python-command "python")
+     (setq python-shell-interpreter "python"))
  #+END_SRC
 *** virtualenvwrapper
-    Disabling this for now
- #+BEGIN_SRC emacs-lisp :tangle no
-   (use-package virtualenvwrapper
-     :ensure t
-     :config
-     (progn
-       (venv-initialize-interactive-shells)
-       (venv-initialize-eshell)
-       (setq venv-location "~/.virtualenvs")))
+ #+BEGIN_SRC emacs-lisp :tangle yes
+     (use-package virtualenvwrapper
+       :ensure t
+       :config
+       (progn
+	 (venv-initialize-interactive-shells)
+	 (venv-initialize-eshell)
+	 (setq venv-location "~/.virtualenvs")))
  #+END_SRC
+*** pipenv
+    #+BEGIN_SRC emacs-lisp :tangle yes
+      (use-package pipenv
+	:hook (python-mode . pipenv-mode)
+	:init
+	(setq
+	 pipenv-projectile-after-switch-function
+	 #'pipenv-projectile-after-switch-extended)
+	:ensure t)
+    #+END_SRC
 ** XQuery
    #+BEGIN_SRC emacs-lisp :tangle yes
      (use-package xquery-mode
        :ensure t
        :mode (("\\.xq[lm]?\\'" . xquery-mode)))
    #+END_SRC
-** SPARQL
-   #+BEGIN_SRC emacs-lisp :tangle yes
-     (use-package sparql-mode
-       :ensure t
-       :mode (("\\.rq\\'" . sparql-mode)))
-   #+END_SRC
-
-   #+RESULTS:
 
 ** Prolog
    #+BEGIN_SRC emacs-lisp :tangle yes
      (use-package ediprolog
        :ensure t
        :mode (("\\.pl\\'" . prolog-mode)))
+   #+END_SRC
+* Rails support
+** projectile-rails
+   #+BEGIN_SRC emacs-lisp :tangle yes
+     (use-package projectile-rails
+       :ensure t)
    #+END_SRC
 * Miscellaneous
 ** plantuml-mode
@@ -490,7 +550,7 @@ Use package is vital.
        :ensure t
        :config
        (progn
-	 (setq plantuml-jar-path "/usr/local/Cellar/plantuml/1.2017.16/libexec/plantuml.jar")
+	 (setq plantuml-jar-path "/usr/local/Cellar/plantuml/1.2018.12/libexec/plantuml.jar")
 	 (setq org-plantuml-jar-path plantuml-jar-path))
        )
    #+END_SRC
@@ -503,12 +563,36 @@ Use package is vital.
 	:defer t)
     #+END_SRC
 *** csv-nav
-    #+BEGIN_SRC emacs-lisp :tangle yes
+    #+BEGIN_SRC emacs-lisp :tangle no
       (use-package csv-nav
 	:ensure t
 	:defer t)
     #+END_SRC
+** Semantic Web
+*** omn-mode
+    for editing files in OWL Manchester notation
+    #+BEGIN_SRC emacs-lisp :tangle yes
+      (use-package omn-mode
+	:ensure t)
+    #+END_SRC
+** YAML
+   #+BEGIN_SRC emacs-lisp :tangle yes
+     (use-package yaml-mode
+       :ensure t
+       :mode (("\\.yml\\'" . yaml-mode)))
+   #+END_SRC
 * Trial packages
+** avy
+   #+BEGIN_SRC emacs-lisp :tangle no
+     (use-package avy
+       :ensure t
+       :config
+       (progn
+	 (avy-setup-default)
+	 (global-set-key (kbd "C-c C-j") 'avy-resume)
+	 (global-set-key (kbd "C-:") 'avy-goto-char)
+	 (global-set-key (kbd "C-'") 'avy-goto-char-2)))
+   #+END_SRC
 ** wordnut
    #+BEGIN_SRC emacs-lisp :tangle no
       (use-package wordnut
@@ -558,6 +642,7 @@ Use package is vital.
    Has some prereqs.
    #+BEGIN_SRC emacs-lisp :tangle no
      (use-package poet-theme
+       :ensure t
        :init
        (progn
 	 (set-face-attribute 'default nil :family "Fira Code" :height 130)
@@ -569,7 +654,7 @@ Use package is vital.
    #+END_SRC
 ** spelling
    Emacs 26 now supports [[https://abiword.github.io/enchant/][Enchant]], and Hunspell is more modern than aspell.
-   Wchec-mode seems popular.
+   Wcheck-mode seems popular.
    #+BEGIN_SRC emacs-lisp :tangle yes
      (use-package wcheck-mode
        :ensure t
@@ -586,4 +671,91 @@ Use package is vital.
 	 (autoload 'wcheck-jump-backward "wcheck-mode"
 	   "Move point backward to previous marked text area." t)))
    #+END_SRC
+** ace-window
+   #+BEGIN_SRC emacs-lisp :tangle no
+     (use-package ace-window
+       :ensure t
+       :config
+       (global-set-key (kbd "M-o") 'ace-window))
+   #+END_SRC
+** deadgrep
+   emacs mode for ripgrep
+   #+BEGIN_SRC emacs-lisp :tangle yes
+     (use-package deadgrep
+       :ensure t
+       :config
+       (global-set-key (kbd "<f5>") #'deadgrep))
+   #+END_SRC
+** org-super-agenda
+   This package lets you “supercharge” your Org daily/weekly
+   agenda. The idea is to group items into sections, rather than
+   having them all in one big list.
+
+   #+BEGIN_SRC emacs-lisp :tangle no
+     (use-package org-super-agenda
+       :ensure t
+       :config
+       (progn (add-to-list 'org-modules 'org-habit)
+       (setq org-super-agenda-groups
+	     '(;; Each group has an implicit boolean OR operator between its selectors.
+	      (:name "Today"  ; Optionally specify section name
+		     :time-grid t  ; Items that appear on the time grid
+		     :todo "TODAY")  ; Items that have this TODO keyword
+	      (:name "Important"
+		     ;; Single arguments given alone
+		     :tag "bills"
+		     :priority "A")
+	      ;; Set order of multiple groups at once
+	      (:order-multi (2 (:name "Shopping in town"
+				      ;; Boolean AND group matches items that match all subgroups
+				      :and (:tag "shopping" :tag "@town"))
+			       (:name "Food-related"
+				      ;; Multiple args given in list with implicit OR
+				      :tag ("food" "dinner"))
+			       (:name "Personal"
+				      :habit t
+				      :tag "personal")
+			       (:name "Space-related (non-moon-or-planet-related)"
+				      ;; Regexps match case-insensitively on the entire entry
+				      :and (:regexp ("space" "NASA")
+						    ;; Boolean NOT also has implicit OR between selectors
+						    :not (:regexp "moon" :tag "planet")))))
+	      ;; Groups supply their own section names when none are given
+	      (:todo "WAITING" :order 8)  ; Set order of this section
+	      (:todo ("SOMEDAY" "TO-READ" "CHECK" "TO-WATCH" "WATCHING")
+		     ;; Show this group at the end of the agenda (since it has the
+		     ;; highest number). If you specified this group last, items
+		     ;; with these todo keywords that e.g. have priority A would be
+		     ;; displayed in that group instead, because items are grouped
+		     ;; out in the order the groups are listed.
+		     :order 9)
+	      (:priority<= "B"
+			   ;; Show this section after "Today" and "Important", because
+			   ;; their order is unspecified, defaulting to 0. Sections
+			   ;; are displayed lowest-number-first.
+			   :order 1)
+	      ;; After the last group, the agenda will display items that didn't
+	      ;; match any of these groups, with the default order position of 99
+	      ))))
+   #+END_SRC
    
+** FiraCode
+   FiraCode is a monospaced programming font with
+   some fancy ligatures, which can be enabled easily
+   on macOS https://github.com/tonsky/FiraCode/wiki/Emacs-instructions
+   #+begin_src emacs-lisp :tangle yes
+     (mac-auto-operator-composition-mode)
+   #+end_src
+** Doom modeline
+   https://github.com/seagle0128/doom-modeline
+   #+begin_src emacs-lisp :tangle no
+     (use-package doom-modeline
+	   :ensure t
+	   :hook (after-init . doom-modeline-mode))
+   #+end_src
+** HTTP twiddle
+   Recommended by the Lambda Island guy
+   #+begin_src emacs-lisp :tangle yes
+     (use-package http-twiddle
+       :ensure t)
+   #+end_src
