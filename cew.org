@@ -70,7 +70,6 @@
        (setq load-prefer-newer t)
      #+END_SRC
 
-
 *** Keep things minimalistic
     #+BEGIN_SRC emacs-lisp :tangle yes
       (setq inhibit-startup-screen t)
@@ -117,6 +116,11 @@
     #+BEGIN_SRC emacs-lisp :tangle yes
       (setq insert-directory-program (executable-find "gls"))
     #+END_SRC
+
+    Make dired listings human-readable
+    #+begin_src emacs-lisp :tangle yes
+      (setq dired-listing-switches "-alh")
+    #+end_src
 *** Don't use tabs for spacing
     #+BEGIN_SRC emacs-lisp :tangle yes
       (setq indent-tabs-mode nil)
@@ -230,7 +234,7 @@
 ** SPARQL
    #+BEGIN_SRC emacs-lisp :tangle yes
      (use-package sparql-mode
-       :ensure t
+       :defer t
        :mode (("\\.rq\\'" . sparql-mode)))
    #+END_SRC
 ** Org Mode
@@ -389,7 +393,8 @@
       (use-package org-bullets
         :ensure t
         :config
-        (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
+        (add-hook
+ 'org-mode-hook (lambda () (org-bullets-mode 1))))
     #+END_SRC
 
 *** org-babel
@@ -441,6 +446,16 @@
    #+end_src
 * Language Support
 ** Common Lisp
+*** slime
+    #+begin_src emacs-lisp :tangle no
+      (use-package slime
+	:ensure t
+	:config
+	(progn
+	  (setq inferior-lisp-program "/usr/local/bin/sbcl")
+	  ))
+    #+end_src
+*** sbcl
    My default implementation is sbcl. Use the following to get
    slime going from QuickLisp.
 
@@ -450,6 +465,26 @@
   (setq inferior-lisp-program "/usr/local/bin/sbcl")   
    #+END_SRC
 
+** elisp
+*** dash
+    #+begin_src emacs-lisp :tangle yes
+      (progn
+	(use-package dash
+	  :ensure t
+	  :config
+	  (dash-enable-font-lock))
+	(use-package dash-functional :ensure t))
+    #+end_src
+*** s
+    A string-manipulation library.
+    #+begin_src emacs-lisp :tangle yes
+      (use-package s :ensure t)
+    #+end_src
+*** request
+    An easy http library
+    #+begin_src emacs-lisp :tangle yes
+      (use-package request :ensure t)
+    #+end_src
 ** Cucumber
 *** feature mode
     For editing cucumber stories
@@ -490,67 +525,121 @@
      (add-hook 'clojure-mode-hook 'rainbow-delimiters-mode))
  #+end_src
 
-
 ** Ruby
+   In preparation for all-hands week, I'm going to revamp my
+   ruby-editing environment, based on the latest I can glean from the
+   web. 
+
+   Spacemacs has a [[https://github.com/syl20bnr/spacemacs/tree/develop/layers/+lang/ruby#test-runner][ruby layer]] that suggests a number of packages and
+   configurations.
+*** bundler
+    #+begin_src emacs-lisp :tangle yes
+      (use-package bundler
+	:ensure t
+	:init (dolist (mode '(ruby-mode enh-ruby-mode))))
+    #+end_src
+*** enh-ruby-mode
+    #+BEGIN_SRC emacs-lisp :tangle yes
+      (use-package enh-ruby-mode
+	:mode "\\.rb\\'"
+	:interpreter "ruby")
+    #+END_SRC
 *** inf-ruby
    #+BEGIN_SRC emacs-lisp :tangle yes
      (use-package inf-ruby
-       :ensure t
+       :defer t
        :config
        (progn
 	 (add-hook 'ruby-mode-hook 'inf-ruby-minor-mode)
 	 (add-hook 'enh-ruby-mode-hook 'inf-ruby-minor-mode)))
    #+END_SRC
-#+BEGIN_SRC emacs-lisp :tangle no
-  (unless (package-installed-p 'inf-ruby)
-    (package-install 'inf-ruby))
-
-    (add-hook 'after-init-hook 'inf-ruby-switch-setup)
-#+END_SRC
-*** enh-ruby-mode
-    #+BEGIN_SRC emacs-lisp :tangle yes
-      (use-package enh-ruby-mode
+*** rbenv
+    #+begin_src emacs-lisp :tangle yes
+      (use-package rbenv
 	:ensure t
+	:defer t
+	:init (progn
+		(add-hook 'ruby-mode-hook #'global-rbenv-mode)
+		(add-hook 'enh-ruby-mode-hook #'global-rbenv-mode)
+		(add-hook 'ruby-mode-hook #'rbenv-use-global)
+		(add-hook 'enh-ruby-mode-hook #'rbenv-use-global)))
+    #+end_src
+    
+*** robe
+    #+begin_src emacs-lisp :tangle yes
+      (use-package robe
+	:ensure t
+	:defer t
 	:config
-	(progn
-	  (add-to-list 'auto-mode-alist '("\\.rb$" . enh-ruby-mode))))
-    #+END_SRC
+	(add-hook 'ruby-mode-hook 'robe-mode)
+	(add-hook 'enh-ruby-mode-hook 'robe-mode))
+    #+end_src
 *** rubocop
     #+BEGIN_SRC emacs-lisp :tangle yes
       (use-package rubocop
-        :ensure t)
+	:ensure t)
     #+END_SRC
 *** RSpec Mode
     #+BEGIN_SRC emacs-lisp :tangle yes
       (use-package rspec-mode
 	:ensure t)
     #+END_SRC
+*** ruby-electric
+    #+begin_src emacs-lisp :tangle yes
+      (use-package ruby-electric
+      :ensure t)
+    #+end_src
+*** seeing-is-believing
+    #+begin_src emacs-lisp :tangle yes
+      (use-package seeing-is-believing
+      :ensure t)
+    #+end_src
+
 ** Python
 *** elpy
- #+BEGIN_SRC emacs-lisp :tangle yes
+
+    These are the [[https://elpy.readthedocs.io/en/latest/introduction.html][author's instructions]] for installation and
+    configuration. but they don't seem to work.
+    #+begin_src emacs-lisp :tangle no
    (use-package elpy
      :ensure t
-     :config
-     (elpy-enable)
-     (setq elpy-rpc-python-command "python")
-     (setq python-shell-interpreter "python")
-     (setenv "WORKON_HOME" "/Users/cwulfman/.local/share/virtualenvs"))
- #+END_SRC
+     :defer t
+     :init
+     (advice-add 'python-mode :before 'elpy-enable))
+    #+end_src
+
+    #+begin_src emacs-lisp :tangle yes
+      (use-package elpy
+	:ensure t
+	:config
+	(elpy-enable)
+	(setq elpy-rpc-python-command "python")
+	(setq python-shell-interpreter "python")
+	(setenv "WORKON_HOME" "/Users/cwulfman/.local/share/virtualenvs"))
+    #+end_src
+*** pyenv-mode
+    Helps pyenv work nicely with elpy (see
+    https://smythp.com/emacs/python/2016/04/27/pyenv-elpy.html)
+    #+begin_src emacs-lisp :tangle yes
+      (use-package pyenv-mode
+	:ensure t
+	:config
+	(pyenv-mode))
+    #+end_src
 *** virtualenvwrapper
- #+BEGIN_SRC emacs-lisp :tangle yes
-     (use-package virtualenvwrapper
-       :ensure t
-       :config
-       (progn
-	 (venv-initialize-interactive-shells)
-	 (venv-initialize-eshell)
-	 (setq venv-location "~/.virtualenvs")))
- #+END_SRC
+       #+BEGIN_SRC emacs-lisp :tangle yes
+	 (use-package virtualenvwrapper
+	   :ensure t
+	   :defer t
+	   :init
+	   (venv-initialize-interactive-shells)
+	   (venv-initialize-eshell))
+	#+END_SRC
 *** pipenv
    [[https://docs.pipenv.org][Pipenv]] is, apparently, the recommended Python packaging tool
    now. It combines pip and virtualenv. [[https://github.com/pwalsh/pipenv.el][pipenv.el]] is an emacs porcelin
    around pipenv.
-   #+begin_src emacs-lisp :tangle yes
+   #+begin_src emacs-lisp :tangle no
      (use-package pipenv
        :hook (python-mode . pipenv-mode)
        :init
@@ -560,19 +649,19 @@
        :ensure t)
    #+end_src
 
-** XQuery
-   #+BEGIN_SRC emacs-lisp :tangle yes
-     (use-package xquery-mode
-       :ensure t
-       :mode (("\\.xq[lm]?\\'" . xquery-mode)))
-   #+END_SRC
+**** XQuery
+     #+BEGIN_SRC emacs-lisp :tangle yes
+       (use-package xquery-mode
+	 :ensure t
+	 :mode (("\\.xq[lm]?\\'" . xquery-mode)))
+     #+END_SRC
 
-** Prolog
-   #+BEGIN_SRC emacs-lisp :tangle yes
-     (use-package ediprolog
-       :ensure t
-       :mode (("\\.pl\\'" . prolog-mode)))
-   #+END_SRC
+**** Prolog
+     #+BEGIN_SRC emacs-lisp :tangle yes
+       (use-package ediprolog
+	 :ensure t
+	 :mode (("\\.pl\\'" . prolog-mode)))
+     #+END_SRC
 * Rails support
 ** projectile-rails
    #+BEGIN_SRC emacs-lisp :tangle yes
@@ -588,7 +677,7 @@
        :ensure t
        :config
        (progn
-	 (setq plantuml-jar-path "/usr/local/Cellar/plantuml/1.2019.6/libexec/plantuml.jar")
+	 (setq plantuml-jar-path "/usr/local/Cellar/plantuml/1.2019.12/libexec/plantuml.jar")
 	 (setq org-plantuml-jar-path plantuml-jar-path))
        )
    #+END_SRC
@@ -619,6 +708,14 @@
        :ensure t
        :mode (("\\.yml\\'" . yaml-mode)))
    #+END_SRC
+** JSON
+   #+begin_src emacs-lisp :tangle yes
+     (use-package json-mode
+       :ensure t
+       :mode (("\\.json\\'" . json-mode)))
+	      
+   #+end_src
+
 ** Dash
    A prerequisite for dired-hacks
    #+begin_src emacs-lisp :tangle yes
@@ -638,7 +735,7 @@
 	 (global-set-key (kbd "C-'") 'avy-goto-char-2)))
    #+END_SRC
 ** wordnut
-   #+BEGIN_SRC emacs-lisp :tangle no
+   #+BEGIN_SRC emacs-lisp :tangle yes
       (use-package wordnut
 	:ensure t)
    #+END_SRC
@@ -691,7 +788,7 @@
 ** spelling
    Emacs 26 now supports [[https://abiword.github.io/enchant/][Enchant]], and Hunspell is more modern than aspell.
    Wcheck-mode seems popular.
-   #+BEGIN_SRC emacs-lisp :tangle yes
+   #+BEGIN_SRC emacs-lisp :tangle no
      (use-package wcheck-mode
        :ensure t
        :init
@@ -813,7 +910,7 @@
    Recommended by 
    https://jonathanabennett.github.io/blog/2019/05/29/writing-academic-papers-with-org-mode/
    See github: https://github.com/tmalsburg/helm-bibtex
-   #+begin_src emacs-lisp :tangle yes
+   #+begin_src emacs-lisp :tangle no
      (use-package ivy-bibtex
        :ensure t
        :config
@@ -830,7 +927,7 @@
    #+end_src
 
 ** org-ref
-   #+begin_src emacs-lisp :tangle yes
+   #+begin_src emacs-lisp :tangle no
      (use-package org-ref
        :ensure t
        :custom
@@ -839,7 +936,7 @@
 ** neotree
    #+begin_src emacs-lisp :tangle yes
      (use-package neotree
-       :ensure t
+       :defer t
        :config
        (global-set-key [f8] 'neotree-toggle))
    #+end_src
