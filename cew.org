@@ -140,6 +140,13 @@
 	   (exec-path-from-shell-initialize))))
     #+END_SRC
 
+** FiraCode
+   FiraCode is a monospaced programming font with
+   some fancy ligatures, which can be enabled easily
+   on macOS https://github.com/tonsky/FiraCode/wiki/Emacs-instructions
+   #+begin_src emacs-lisp :tangle yes
+     (mac-auto-operator-composition-mode)
+   #+end_src
 * Princeton-specific
   Create shortcuts for dired-tramp
 
@@ -150,41 +157,55 @@
   #+end_src
 * Package-specific configurations
 ** Counsel / Ivy / Swiper
-   I go off and on with this package. Here's how to install and
-   configure (thanks to Zamansky)
+   I go off and on with these packages. Here's how to install and
+   configure (see the manual: http://oremacs.com/swiper/ and the developer's own
+   init.el: https://github.com/bbatsov/emacs.d/blob/master/init.el
    #+begin_src emacs-lisp :tangle yes
-     (use-package counsel ;brings in swiper and ivy
+     (use-package ivy
        :ensure t
        :config
-       (progn
-	 (setq ivy-use-virtual-buffers t)	;recommended by abo-abo for new users
-	 (setq ivy-count-format "(%d/%d) ")))	;ditto
-   #+end_src
+       (ivy-mode 1)
+       (setq ivy-use-virtual-buffers t)
+       (setq enable-recursive-minibuffers t)
+       (setq ivy-count-format "(%d/%d) ")
+       (global-set-key (kbd "C-c C-r") 'ivy-resume)
+       (global-set-key (kbd "<f6>") 'ivy-resume))
 
-   #+BEGIN_SRC emacs-lisp :tangle yes
      (use-package swiper
        :ensure t
        :config
-       (progn
-	 (global-set-key (kbd "C-s") 'swiper)
-	 ;;shell and system tools
-	 (global-set-key (kbd "C-c g") 'counsel-git)
-	 (global-set-key (kbd "C-c j") 'counsel-git-grep)
-	 (global-set-key (kbd "C-c k") 'counsel-ag)
-	 (global-set-key (kbd "C-x l") 'counsel-locate)
-	 (global-set-key (kbd "C-c C-r") 'ivy-resume)))
-   #+END_SRC
+       (global-set-key (kbd "C-s") 'swiper))
+
+     (use-package counsel
+       :ensure t
+       :config
+       (global-set-key (kbd "M-x") 'counsel-M-x)
+       (global-set-key (kbd "C-x C-f") 'counsel-find-file)
+       (global-set-key (kbd "<f1> f") 'counsel-describe-function)
+       (global-set-key (kbd "<f1> v") 'counsel-describe-variable)
+       (global-set-key (kbd "<f1> l") 'counsel-find-library)
+       (global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
+       (global-set-key (kbd "<f2> u") 'counsel-unicode-char)
+       (global-set-key (kbd "C-c g") 'counsel-git)
+       (global-set-key (kbd "C-c j") 'counsel-git-grep)
+       (global-set-key (kbd "C-c a") 'counsel-ag)
+       (global-set-key (kbd "C-x l") 'counsel-locate)
+       (define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history))
+   #+end_src
 
 ** magit
    #+BEGIN_SRC emacs-lisp :tangle yes
      (use-package magit
        :ensure t
        :config
-       (progn
-         ;; make ivy work with magit  http://oremacs.com/2015/04/16/ivy-mode/ -cew 8/4/2016
-         ;; (setq magit-completing-read-function 'ivy-completing-read)
-         (setq magit-item-highlight-face 'bold)))
+	 ;; make ivy work with magit  http://oremacs.com/2015/04/16/ivy-mode/ -cew 8/4/2016
+       (setq magit-completing-read-function 'ivy-completing-read)
+       (setq magit-item-highlight-face 'bold))
    #+END_SRC
+
+   #+RESULTS:
+   : t
+
 ** try mode
 #+BEGIN_SRC emacs-lisp :tangle yes
   (use-package try
@@ -254,7 +275,7 @@
       (bind-key "C-c c" 'org-capture)
       (bind-key "C-c a" 'org-agenda)
       (bind-key "C-c l" 'org-store-link)
-      (bind-key "C-c b" 'org-iswitchb)
+      ;; (bind-key "C-c b" 'org-iswitchb)
     #+END_SRC
 
 *** Agenda
@@ -279,47 +300,52 @@
 
 	%i
 	" "Basic task data")
+
       (setq org-capture-templates
-      (quote
-	  (("j" "Journal Entry" entry
-	    (file+olp+datetree "~/personal/journal.org")
-	    "* %U
+	    (quote
+	     (
+	     ("j" "Journal Entry" entry
+	       (file+olp+datetree "~/personal/journal.org")
+	       "* %U
 	%?
 	%i
 	%a")
-	   ("t" "Todo" entry
-	    (file+olp "~/gtd/gtd.org" "INBOX")
-	    "* TODO %?\n  %i\n  %a")
-	   ("m" "Meeting" entry
-	    (file+olp "~/gtd/notes.org" "Meetings")
-	    "* %U MEETING with %? :MEETING:
+	
+	      ("t" "Todo" entry
+	       (file+olp "~/gtd/gtd.org" "INBOX")
+	       "* TODO %?\n  %i\n  %a")
+	
+	      ("m" "Meeting" entry
+	       (file+olp "~/gtd/notes.org" "Meetings")
+	       "* %U MEETING with %? :MEETING:
       ,** Notes
 
       ,** Actions
       " :clock-in t :clock-resume t)
-	   ("p" "Phone" entry
-	    (file+olp "~/gtd/notes.org" "Meetings")
-	    "* %U CALL with %? :CALL:
+	
+	      ("p" "Phone" entry
+	       (file+olp "~/gtd/notes.org" "Meetings")
+	       "* %U CALL with %? :CALL:
       ,** Notes
 
       ,** Actions
       " :clock-in t :clock-resume t)
-
-	   ("n" "Note" entry
-	    (file+headline "~/gtd/notes.org" "Notes")
-	    "* %u %?" :prepend t)
-	   ))
-      )
+	
+	      ("n" "Note" entry
+	       (file+headline "~/gtd/notes.org" "Notes")
+	       "* %u %?" :prepend t)
+	      ))
+	    )
     #+END_SRC
 *** Faces
     #+BEGIN_SRC emacs-lisp :tangle yes
       (setq org-todo-keyword-faces
-	    (quote (("TODO" :foreground "dark turquoise" :weight normal)
-		    ("NEXT" :foreground "turquoise" :weight bold)
-		    ("IN_PROGRESS" :foreground "light blue" :weight bold)
+	    (quote (("TODO" :foreground "DeepSkyBlue2" :weight normal)
+		    ("NEXT" :foreground "DeepSkyBlue2" :weight bold)
+		    ("IN_PROGRESS" :foreground "green3" :weight normal)
 		    ("DONE" :foreground "gray" :weight normal)
 		    ("WAITING" :foreground "orange" :weight normal)
-		    ("HOLD" :foreground "red" :weight bold)
+		    ("HOLD" :foreground "red" :weight normal)
 		    ("CANCELLED" :foreground "light gray" :weight normal)
 		    ("MEETING" :foreground "forest green" :weight normal)
 		    ("PHONE" :foreground "forest green" :weight noral))))
@@ -360,7 +386,7 @@
 *** KOMA-Script configuration
     For writing letters in org.  The following configuration comes from [[http://orgmode.org/worg/exporters/koma-letter-export.html][worg]]. 
 
-    #+BEGIN_SRC emacs-lisp :tangle yes
+    #+BEGIN_SRC emacs-lisp :tangle no
       (eval-after-load 'ox '(require 'ox-koma-letter))
       (eval-after-load 'ox-latex
         '(add-to-list 'org-latex-packages-alist '("AUTO" "babel" t) t))
@@ -391,10 +417,10 @@
 *** Aesthetics
     #+BEGIN_SRC emacs-lisp :tangle yes
       (use-package org-bullets
-        :ensure t
-        :config
-        (add-hook
- 'org-mode-hook (lambda () (org-bullets-mode 1))))
+	:ensure t
+	:config
+	(add-hook
+	 'org-mode-hook (lambda () (org-bullets-mode 1))))
     #+END_SRC
 
 *** org-babel
@@ -427,18 +453,38 @@
      (use-package projectile
        :ensure t
        :config
+       (setq projectile-completion-system 'ivy)
        (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
        (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
        (projectile-mode +1))
    #+END_SRC
 ** paredit mode
    #+begin_src emacs-lisp :tangle yes
-	  (use-package paredit
-	    :ensure t
-	    :init
-	    (add-hook 'clojure-mode-hook #'enable-paredit-mode))
+     (use-package paredit
+       :ensure t
+       :init
+       (add-hook 'clojure-mode-hook #'enable-paredit-mode))
    #+end_src
+** ibuffer mode
+   #+begin_src emacs-lisp :tangle yes
+     (setq ibuffer-saved-filter-groups
+	   (quote (("default"
+		    ("dired" (mode . dired-mode))
+		    ("ruby" (or (mode . Ruby)
+				(mode . EnhRuby)))
+		    ("org" (or
+			    (mode . org-mode)
+			    (filename . "OrgMode")))
+		    ("magit" (name . "\*magit"))
+		    ("emacs" (or
+			      (name . "^\\*scratch\\*$")
+			      (name . "^\\*Messages\\*$")))))))
 
+     (add-hook 'ibuffer-mode-hook
+	       (lambda ()
+		 (ibuffer-switch-to-saved-filter-groups "default")))
+
+   #+end_src
    As a crib for learning, add menu for paredit
    #+begin_src emacs-lisp :tangle yes
      (use-package paredit-menu
@@ -532,6 +578,12 @@
 
    Spacemacs has a [[https://github.com/syl20bnr/spacemacs/tree/develop/layers/+lang/ruby#test-runner][ruby layer]] that suggests a number of packages and
    configurations.
+*** enable linum mode for Ruby
+    #+begin_src emacs-lisp :tangle yes
+      (progn
+	(add-hook 'ruby-mode-hook #'linum-mode)
+	(add-hook 'enh-ruby-mode-hook #'linum-mode))
+    #+end_src
 *** bundler
     #+begin_src emacs-lisp :tangle yes
       (use-package bundler
@@ -554,7 +606,8 @@
 	 (add-hook 'enh-ruby-mode-hook 'inf-ruby-minor-mode)))
    #+END_SRC
 *** rbenv
-    #+begin_src emacs-lisp :tangle yes
+    Disabled now, because using asdf instead of rbenv
+    #+begin_src emacs-lisp :tangle no
       (use-package rbenv
 	:ensure t
 	:defer t
@@ -577,7 +630,11 @@
 *** rubocop
     #+BEGIN_SRC emacs-lisp :tangle yes
       (use-package rubocop
-	:ensure t)
+	:ensure t
+	:config
+	(progn
+	  (add-hook 'ruby-mode-hook #'rubocop-mode)
+	  (add-hook 'enh-ruby-mode-hook #'rubocop-mode)))
     #+END_SRC
 *** RSpec Mode
     #+BEGIN_SRC emacs-lisp :tangle yes
@@ -596,8 +653,14 @@
     #+end_src
 
 ** Python
-*** elpy
+*** python-black
+    #+begin_src emacs-lisp :tangle yes
+      (use-package python-black
+	:demand t
+	:after python)
+    #+end_src
 
+*** elpy
     These are the [[https://elpy.readthedocs.io/en/latest/introduction.html][author's instructions]] for installation and
     configuration. but they don't seem to work.
     #+begin_src emacs-lisp :tangle no
@@ -615,11 +678,15 @@
 	(elpy-enable)
 	(setq elpy-rpc-python-command "python")
 	(setq python-shell-interpreter "python")
-	(setenv "WORKON_HOME" "/Users/cwulfman/.local/share/virtualenvs"))
+	(setq elpy-virtual-env-path 'current)
+      ;  (setenv "WORKON_HOME" "/Users/cwulfman/.local/share/virtualenvs")
+	(setenv "WORKON_HOME" "/Users/cwulfman/.pyenv/versions"))
     #+end_src
 *** pyenv-mode
     Helps pyenv work nicely with elpy (see
     https://smythp.com/emacs/python/2016/04/27/pyenv-elpy.html)
+
+    See also http://rakan.me/emacs/python-dev-with-emacs-and-pyenv/
     #+begin_src emacs-lisp :tangle yes
       (use-package pyenv-mode
 	:ensure t
@@ -627,7 +694,7 @@
 	(pyenv-mode))
     #+end_src
 *** virtualenvwrapper
-       #+BEGIN_SRC emacs-lisp :tangle yes
+       #+BEGIN_SRC emacs-lisp :tangle no
 	 (use-package virtualenvwrapper
 	   :ensure t
 	   :defer t
@@ -872,13 +939,6 @@
 	      ))))
    #+END_SRC
    
-** FiraCode
-   FiraCode is a monospaced programming font with
-   some fancy ligatures, which can be enabled easily
-   on macOS https://github.com/tonsky/FiraCode/wiki/Emacs-instructions
-   #+begin_src emacs-lisp :tangle yes
-     (mac-auto-operator-composition-mode)
-   #+end_src
 ** Doom modeline
    https://github.com/seagle0128/doom-modeline
    #+begin_src emacs-lisp :tangle no
@@ -941,3 +1001,22 @@
        (global-set-key [f8] 'neotree-toggle))
    #+end_src
    
+** treemacs
+   #+begin_src emacs-lisp :tangle yes
+     (use-package treemacs
+       :ensure t
+       :defer t)
+
+     (use-package treemacs-projectile
+       :after tremacs projectile
+       :ensure t)
+
+     (use-package treemacs-icons-dired
+       :after treemacs dired
+       :ensure t
+       :config (treemacs-icons-dired-mode))
+
+     (use-package treemacs-magit
+       :after treemacs magit
+       :ensure t)
+   #+end_src
