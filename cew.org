@@ -145,7 +145,8 @@
    some fancy ligatures, which can be enabled easily
    on macOS https://github.com/tonsky/FiraCode/wiki/Emacs-instructions
    #+begin_src emacs-lisp :tangle yes
-     (mac-auto-operator-composition-mode)
+     (when (eq system-type 'darwin)
+       (mac-auto-operator-composition-mode))
    #+end_src
 * Princeton-specific
   Create shortcuts for dired-tramp
@@ -202,10 +203,6 @@
        (setq magit-completing-read-function 'ivy-completing-read)
        (setq magit-item-highlight-face 'bold))
    #+END_SRC
-
-   #+RESULTS:
-   : t
-
 ** try mode
 #+BEGIN_SRC emacs-lisp :tangle yes
   (use-package try
@@ -490,6 +487,7 @@
      (use-package paredit-menu
        :ensure t)
    #+end_src
+* General Programming
 * Language Support
 ** Common Lisp
 *** slime
@@ -656,7 +654,7 @@
 *** python-black
     #+begin_src emacs-lisp :tangle yes
       (use-package python-black
-	:demand t
+	:ensure t
 	:after python)
     #+end_src
 
@@ -691,7 +689,7 @@
       (use-package pyenv-mode
 	:ensure t
 	:config
-	(pyenv-mode))
+	(add-hook 'python-mode-hook 'pyenv-mode))
     #+end_src
 *** virtualenvwrapper
        #+BEGIN_SRC emacs-lisp :tangle no
@@ -994,7 +992,8 @@
        (org-ref-defaul-bibliography "~/zotero.bib"))
    #+end_src
 ** neotree
-   #+begin_src emacs-lisp :tangle yes
+   Right now, I'm preferring treemacs to neotree
+   #+begin_src emacs-lisp :tangle no
      (use-package neotree
        :defer t
        :config
@@ -1019,4 +1018,11 @@
      (use-package treemacs-magit
        :after treemacs magit
        :ensure t)
+   #+end_src
+** tox
+   For python
+   #+begin_src emacs-lisp :tangle yes
+     (use-package tox
+       :ensure t
+       :config (setq tox-runner 'py.test))
    #+end_src
