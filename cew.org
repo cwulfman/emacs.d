@@ -445,6 +445,13 @@
       (use-package org-noter
 	:ensure t)
     #+END_SRC
+*** literate programming
+    From [[http://www.howardism.org/Technical/Emacs/literate-programming-tutorial.html][a tutorial]] I found.
+    #+begin_src emacs-lisp :tangle yes
+      (setq org-confirm-babel-evaluate nil
+	    org-src-fontify-natively t
+	    org-src-tab-acts-natively t)
+    #+end_src
 ** Projectile
    #+BEGIN_SRC emacs-lisp :tangle yes
      (use-package projectile
@@ -742,7 +749,7 @@
        :ensure t
        :config
        (progn
-	 (setq plantuml-jar-path "/usr/local/Cellar/plantuml/1.2019.12/libexec/plantuml.jar")
+	 (setq plantuml-jar-path "/usr/local/Cellar/plantuml/1.2020.0/libexec/plantuml.jar")
 	 (setq org-plantuml-jar-path plantuml-jar-path))
        )
    #+END_SRC
