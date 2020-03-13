@@ -749,7 +749,7 @@
        :ensure t
        :config
        (progn
-	 (setq plantuml-jar-path "/usr/local/Cellar/plantuml/1.2020.0/libexec/plantuml.jar")
+	 (setq plantuml-jar-path "/usr/local/Cellar/plantuml/1.2020.2/libexec/plantuml.jar")
 	 (setq org-plantuml-jar-path plantuml-jar-path))
        )
    #+END_SRC
