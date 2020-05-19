@@ -494,6 +494,11 @@
      (use-package paredit-menu
        :ensure t)
    #+end_src
+** hydra
+   #+BEGIN_SRC emacs-lisp :tangle yes
+     (use-package hydra
+       :ensure t)
+   #+END_SRC
 * General Programming
 * Language Support
 ** Common Lisp
@@ -598,6 +603,7 @@
 *** enh-ruby-mode
     #+BEGIN_SRC emacs-lisp :tangle yes
       (use-package enh-ruby-mode
+	:ensure t
 	:mode "\\.rb\\'"
 	:interpreter "ruby")
     #+END_SRC
@@ -749,7 +755,7 @@
        :ensure t
        :config
        (progn
-	 (setq plantuml-jar-path "/usr/local/Cellar/plantuml/1.2020.2/libexec/plantuml.jar")
+	 (setq plantuml-jar-path "/usr/local/opt/plantuml/libexec/plantuml.jar")
 	 (setq org-plantuml-jar-path plantuml-jar-path))
        )
    #+END_SRC
